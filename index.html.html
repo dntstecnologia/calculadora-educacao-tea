@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Retroativo IRPF — TEA · Tema 324 TNU</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #EFE3D5;
+  --tan: #DBC1A1;
+  --gold: #CFAA7E;
+  --dark: #40382D;
+  --dark2: #2E2720;
+  --dark3: #1E1A15;
+
+  --bg: #FAF7F3;
+  --card: #FFFFFF;
+  --card-alt: #F8F4EF;
+  --success: #4A7C59;
+  --success-bg: #EEF5F0;
+  --danger: #A3443D;
+  --danger-bg: #FDF2F1;
+  --info-bg: #F0EDE8;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+  --shadow: 0 1px 4px rgba(64,56,45,.06);
+  --shadow-md: 0 4px 20px rgba(64,56,45,.08);
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--dark);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Shell ── */
+.shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 28px;
+}
+.header .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: var(--dark);
+  border-radius: 6px;
+  padding: 5px 12px;
+  margin-bottom: 14px;
+}
+.header .tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.header h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.15;
+  letter-spacing: -.01em;
+}
+.header p {
+  font-size: 14px;
+  color: #8B7D6B;
+  margin-top: 8px;
+  line-height: 1.6;
+  max-width: 520px;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 6px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8B7D6B;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--dark); }
+.tab-btn.active {
+  background: var(--card);
+  color: var(--dark);
+  box-shadow: var(--shadow);
+}
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Split layout ── */
+.split {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Left: Inputs ── */
+.inputs-col {}
+.section-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: #A89880;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 8px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid rgba(219,193,161,.3);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.year-block {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(219,193,161,.2);
+}
+.year-block:first-child { padding-top: 0; }
+.year-block:last-child { border-bottom: none; padding-bottom: 0; }
+
+.year-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.year-label {
+  font-size: 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--dark);
+}
+.year-decl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #A89880;
+  background: var(--card-alt);
+  padding: 3px 10px;
+  border-radius: 5px;
+  letter-spacing: .03em;
+}
+.year-selic {
+  font-size: 11px;
+  color: #A89880;
+}
+.year-selic b { color: var(--dark); }
+
+.year-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #A89880;
+  margin-bottom: 4px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.ibox {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(219,193,161,.45);
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.ibox:focus-within { border-color: var(--gold); }
+.ibox .pfx {
+  padding: 0 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tan);
+  flex-shrink: 0;
+  user-select: none;
+}
+.ibox input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 10px 9px 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 0;
+}
+.ibox select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  font-family: var(--font-body);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A89880' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 26px;
+  min-width: 0;
+}
+
+/* ── Right: Results ── */
+.results-col {}
+
+.hero-card {
+  background: var(--dark);
+  border-radius: var(--radius);
+  padding: 28px 28px 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(207,170,126,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.hero-value {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 600;
+  color: var(--cream);
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.hero-value .cents {
+  font-size: 24px;
+  color: var(--tan);
+  font-weight: 400;
+}
+.hero-bar {
+  margin-top: 18px;
+  height: 6px;
+  background: rgba(255,255,255,.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.hero-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--tan));
+  transition: width .5s ease;
+}
+.hero-breakdown {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(239,227,213,.5);
+  letter-spacing: .02em;
+}
+
+.metrics-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mcard {
+  background: var(--card);
+  border: 1px solid rgba(219,193,161,.25);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.mcard .mc-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #A89880;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+}
+.mcard .mc-val {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--dark);
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+/* ── Desktop table ── */
+.dtable-wrap {
+  background: var(--card);
+  border: 1px solid rgba(219,193,161,.25);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dtable th {
+  text-align: right;
+  font-size: 10px;
+  font-weight: 700;
+  color: #A89880;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 8px 10px;
+  border-bottom: 2px solid rgba(219,193,161,.25);
+  white-space: nowrap;
+}
+.dtable th:first-child { text-align: left; }
+.dtable td {
+  text-align: right;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(219,193,161,.12);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dtable td:first-child { text-align: left; font-weight: 700; }
+.dtable .muted { color: #A89880; }
+.dtable .accent { color: var(--success); font-weight: 700; }
+.dtable tr.total-row td {
+  font-weight: 700;
+  border-top: 2px solid rgba(219,193,161,.35);
+  border-bottom: none;
+  padding-top: 12px;
+  font-size: 14px;
+}
+
+/* ── Mobile cards ── */
+.mcards { display: none; }
+.mcard-item {
+  background: var(--card-alt);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(219,193,161,.2);
+}
+.mci-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.mci-year {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+.mci-total {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--success);
+}
+.mci-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.mci-cell .mci-lbl { font-size: 10px; color: #A89880; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.mci-cell .mci-val { font-size: 13px; font-weight: 600; color: var(--dark); margin-top: 2px; }
+
+/* ── Disclaimer ── */
+.disc {
+  font-size: 11.5px;
+  color: #A89880;
+  line-height: 1.65;
+  padding: 14px 16px;
+  background: var(--card-alt);
+  border-left: 3px solid var(--tan);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  margin-top: 16px;
+}
+.disc strong { color: var(--dark); }
+
+/* ── Steps ── */
+.phase-card {
+  background: var(--card);
+  border: 1px solid rgba(219,193,161,.25);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.phase-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(219,193,161,.2);
+}
+.slist { list-style: none; }
+.slist li {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(219,193,161,.12);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5C5247;
+}
+.slist li:last-child { border-bottom: none; }
+.snum {
+  min-width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--dark);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Cost-benefit tab ── */
+.cb-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cb-hero {
+  background: var(--success-bg);
+  border: 1px solid rgba(74,124,89,.15);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.cb-hero .cbl { font-size: 10px; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.cb-hero .cbv { font-family: var(--font-display); font-size: 42px; font-weight: 600; color: var(--success); }
+.cb-hero .cbs { font-size: 12px; color: #6B8F74; margin-top: 4px; }
+.cb-neg {
+  background: var(--danger-bg);
+  border: 1px solid rgba(163,68,61,.12);
+}
+.cb-neg .cbl { color: var(--danger); }
+.cb-neg .cbv { color: var(--danger); font-size: 28px; }
+.cb-neg .cbs { color: #A3443D; }
+
+.cb-bar-track {
+  height: 10px;
+  background: var(--cream);
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.cb-bar-green {
+  height: 100%;
+  background: var(--success);
+  border-radius: 5px;
+  transition: width .4s;
+}
+
+.cb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(219,193,161,.15);
+  font-size: 13px;
+}
+.cb-row:last-child { border-bottom: none; }
+.cb-row .cb-k { color: #8B7D6B; }
+.cb-row .cb-v { font-weight: 700; color: var(--dark); }
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .header h1 { font-size: 26px; }
+  .hero-value { font-size: 36px; }
+  .hero-value .cents { font-size: 20px; }
+  .metrics-strip { grid-template-columns: 1fr; gap: 8px; }
+  .dtable-wrap { display: none; }
+  .mcards { display: block; }
+  .mci-grid { grid-template-columns: 1fr 1fr; }
+  .cb-split { grid-template-columns: 1fr; }
+  .year-fields { grid-template-columns: 1fr; gap: 8px; }
+  .shell { padding: 16px 14px 48px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Header -->
+  <div class="header">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--gold);">FB</div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--dark);letter-spacing:.03em;line-height:1.15">Fernanda Boaventura</div>
+          <div style="font-size:10px;font-weight:600;color:#A89880;letter-spacing:.12em;text-transform:uppercase">Advocacia</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:#A89880;text-align:right;line-height:1.4">
+        <span style="opacity:.6">tecnologia por</span><br>
+        <span style="font-weight:800;color:var(--dark);letter-spacing:.04em">.dnts</span>
+      </div>
+    </div>
+    <div class="tag">Tema 324 TNU · IRPF 2026</div>
+    <h1>Calculadora de Retroativo<br>IRPF — Filho TEA</h1>
+    <p>Estime quanto você pode recuperar dos últimos 5 anos lançando despesas escolares como despesa médica, sem o teto de R$ 3.561,50.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="go('calc',this)">Calculadora</button>
+    <button class="tab-btn" onclick="go('cb',this)">Custo-benefício</button>
+    <button class="tab-btn" onclick="go('steps',this)">Passo a passo</button>
+  </div>
+
+  <!-- ═══ CALCULADORA ═══ -->
+  <div id="p-calc" class="panel active">
+    <div class="split">
+      <!-- LEFT: Inputs -->
+      <div class="inputs-col">
+        <div class="section-lbl">Dados por ano-base</div>
+        <div class="card" id="year-entries" style="padding:16px 20px"></div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-col">
+        <!-- Hero -->
+        <div class="hero-card">
+          <div class="hero-label">Total a recuperar</div>
+          <div class="hero-value" id="h-total">R$ 0<span class="cents">,00</span></div>
+          <div class="hero-bar"><div class="hero-bar-fill" id="h-bar" style="width:0%"></div></div>
+          <div class="hero-breakdown">
+            <span id="h-ir-lbl">IR pago a mais: R$ 0</span>
+            <span id="h-sel-lbl">Correção Selic: R$ 0</span>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-strip">
+          <div class="mcard"><div class="mc-label">IR a mais</div><div class="mc-val" id="m-ir">R$ 0</div></div>
+          <div class="mcard"><div class="mc-label">Correção Selic</div><div class="mc-val" id="m-sel">R$ 0</div></div>
+          <div class="mcard"><div class="mc-label">Teto/ano</div><div class="mc-val" style="color:var(--danger)">R$ 3.561</div></div>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="dtable-wrap">
+          <table class="dtable">
+            <thead><tr>
+              <th style="text-align:left">Ano</th>
+              <th>Gasto</th>
+              <th>Excedente</th>
+              <th>Alíq.</th>
+              <th>IR a mais</th>
+              <th>Selic</th>
+              <th>Receber</th>
+            </tr></thead>
+            <tbody id="tb-desk"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="mcards" id="mc-mob"></div>
+
+        <div class="disc">
+          <strong>⚠ Estimativas.</strong> Selic acumulada de jun/ano-base até abr/2026 (fontes: BCB). Cálculo exato via <strong>Sicalc da Receita Federal</strong>. Ajuste a alíquota ano a ano conforme sua declaração.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CUSTO-BENEFÍCIO ═══ -->
+  <div id="p-cb" class="panel">
+    <div class="split">
+      <div class="inputs-col">
+        <div class="section-lbl">Custos da ação</div>
+        <div class="card">
+          <div class="field" style="margin-bottom:12px">
+            <label>Honorários do advogado</label>
+            <div class="ibox">
+              <span class="pfx">R$</span>
+              <input type="text" inputmode="decimal" value="2.000,00" id="cb-hon" onfocus="this.select()" oninput="handleCB(this,'hon')">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Custas judiciais (JEF = gratuito)</label>
+            <div class="ibox">
+              <span class="pfx">R$</span>
+              <input type="text" inputmode="decimal" value="0,00" id="cb-cust" onfocus="this.select()" oninput="handleCB(this,'cust')">
+            </div>
+          </div>
+          <div class="field">
+            <label>Honorários de êxito (% sobre valor)</label>
+            <div class="ibox">
+              <span class="pfx">%</span>
+              <input type="text" inputmode="decimal" value="20,00" id="cb-exito" onfocus="this.select()" oninput="handleCB(this,'exito')">
+            </div>
+          </div>
+          <div style="font-size:11px;color:#A89880;margin-top:10px;line-height:1.5;">
+            Valores típicos: honorários fixos de R$ 800 a R$ 3.000 + 15% a 30% de êxito sobre o valor recuperado. JEF não cobra custas.
+          </div>
+        </div>
+      </div>
+
+      <div class="results-col">
+        <!-- Net benefit hero -->
+        <div class="cb-hero" id="cb-hero-net">
+          <div class="cbl">Benefício líquido</div>
+          <div class="cbv" id="cb-net">R$ 0</div>
+          <div class="cbs" id="cb-net-sub">após descontar todos os custos</div>
+        </div>
+
+        <div class="cb-split">
+          <div class="cb-hero" style="padding:18px">
+            <div class="cbl">Valor bruto a recuperar</div>
+            <div class="cbv" style="font-size:24px" id="cb-bruto">R$ 0</div>
+          </div>
+          <div class="cb-hero cb-neg" style="padding:18px">
+            <div class="cbl">Custo total da ação</div>
+            <div class="cbv" id="cb-custo">R$ 0</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div style="font-size:10px;font-weight:700;color:#A89880;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Detalhamento</div>
+          <div class="cb-row"><span class="cb-k">Retroativo bruto (5 anos)</span><span class="cb-v" id="cbd-bruto">—</span></div>
+          <div class="cb-row"><span class="cb-k">(−) Honorários fixos</span><span class="cb-v" id="cbd-hon" style="color:var(--danger)">—</span></div>
+          <div class="cb-row"><span class="cb-k">(−) Custas judiciais</span><span class="cb-v" id="cbd-cust" style="color:var(--danger)">—</span></div>
+          <div class="cb-row"><span class="cb-k">(−) Honorários de êxito</span><span class="cb-v" id="cbd-exito" style="color:var(--danger)">—</span></div>
+          <div class="cb-row" style="border-top:2px solid rgba(219,193,161,.3);padding-top:12px;margin-top:4px">
+            <span class="cb-k" style="font-weight:700;color:var(--dark)">= Benefício líquido</span>
+            <span class="cb-v" id="cbd-net" style="color:var(--success);font-size:16px">—</span>
+          </div>
+
+          <div class="cb-bar-track" style="margin-top:14px">
+            <div class="cb-bar-green" id="cb-bar"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#A89880;margin-top:4px">
+            <span>Custos</span>
+            <span>Benefício líquido</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;background:var(--card-alt)" id="box-anual">
+          <div style="font-size:10px;font-weight:700;color:#A89880;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Economia anual recorrente</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+            <span id="anual-val" style="font-family:var(--font-display);font-size:32px;font-weight:700;color:var(--success)">R$ 0</span>
+            <span style="font-size:12px;color:#A89880">/ano</span>
+          </div>
+          <div style="font-size:12px;color:#5C5247;line-height:1.6" id="anual-desc">
+            Calculando...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO A PASSO ═══ -->
+  <div id="p-steps" class="panel">
+    <div class="phase-card">
+      <div class="phase-title">Fase 1 — Documentação</div>
+      <ul class="slist">
+        <li><span class="snum">1</span><span>Reúna os laudos/diagnósticos do TEA de todos os anos (CID F84). O laudo mais antigo possível é o mais relevante.</span></li>
+        <li><span class="snum">2</span><span>Separe recibos e notas fiscais das mensalidades escolares por ano (2020 a 2024).</span></li>
+        <li><span class="snum">3</span><span>Peça à escola uma declaração formal de que o aluno possui suporte pedagógico especializado (AEE, PEI, mediador, etc.).</span></li>
+        <li><span class="snum">4</span><span>Acesse o e-CAC (<strong>gov.br/ecac</strong>) e baixe as declarações originais de cada exercício.</span></li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-title">Fase 2 — Ação judicial</div>
+      <ul class="slist">
+        <li><span class="snum">5</span><span>Contrate um advogado tributarista com experiência em direitos de PcD/TEA.</span></li>
+        <li><span class="snum">6</span><span>Ação na Justiça Federal com base no <strong>Tema 324 da TNU</strong>: (a) deduzir como despesa médica no IRPF 2026 e (b) restituição retroativa 5 anos + Selic.</span></li>
+        <li><span class="snum">7</span><span>Com a <strong>liminar</strong> em mãos, entregue o IRPF 2026 lançando a escola como despesa médica (código 21) com segurança.</span></li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-title">Fase 3 — Retificadoras</div>
+      <ul class="slist">
+        <li><span class="snum">8</span><span>O advogado apresenta declarações <strong>retificadoras</strong> (2020 a 2024) relançando as mensalidades como despesa médica.</span></li>
+        <li><span class="snum">9</span><span>A Receita Federal processa e emite restituições corrigidas pela Selic nos lotes normais.</span></li>
+        <li><span class="snum">10</span><span>Se a RF não processar, o advogado executa na ação judicial (RPV se ≤ 60 SM, ou precatório).</span></li>
+      </ul>
+    </div>
+
+    <div class="disc">
+      Prazo prescricional: <strong>5 anos</strong> contados do pagamento indevido (art. 168 CTN). Ano-base 2020 (declaração IRPF 2021) pode estar prescrevendo — priorize o ajuizamento.
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(219,193,161,.3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:8px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--gold)">FB</div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--dark)">Fernanda Boaventura Advocacia</div>
+        <div style="font-size:10px;color:#A89880">Especialista em Direito Previdenciário</div>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#A89880;line-height:1.6">
+      <div style="font-weight:800;color:var(--dark);letter-spacing:.04em;margin-bottom:2px">.dnts Tecnologia</div>
+      <div>dntstecnologia@gmail.com</div>
+      <div>(63) 98102-3995</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ──
+const ANOS = [
+  { ano: 2020, decl: 'IRPF 2021', selic: 74.9 },
+  { ano: 2021, decl: 'IRPF 2022', selic: 61.3 },
+  { ano: 2022, decl: 'IRPF 2023', selic: 41.8 },
+  { ano: 2023, decl: 'IRPF 2024', selic: 26.6 },
+  { ano: 2024, decl: 'IRPF 2025', selic: 12.1 },
+];
+const ALIQS = [
+  { l: '27,5%', v: .275 },
+  { l: '22,5%', v: .225 },
+  { l: '15,0%', v: .15 },
+  { l: '7,5%', v: .075 },
+];
+const TETO = 3561.50;
+const ST = {};
+ANOS.forEach(a => { ST[a.ano] = { gasto: 15000, aliq: .275 }; });
+
+// ── Cost-benefit state ──
+const CB = { hon: 2000, cust: 0, exito: 20 };
+
+// ── Helpers ──
+const fmt = v => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+const fmtShort = v => {
+  const abs = Math.abs(v);
+  if (abs >= 1000) return (v<0?'- ':'') + 'R$ ' + (abs/1000).toFixed(1).replace('.',',') + ' mil';
+  return fmt(v);
+};
+const fmtInput = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function splitVal(v) {
+  const parts = fmt(v).replace('R$\u00a0','').split(',');
+  return { int: 'R$ ' + parts[0], dec: ',' + (parts[1]||'00') };
+}
+
+// ── Build inputs ──
+function build() {
+  const el = document.getElementById('year-entries');
+  el.innerHTML = ANOS.map(a => `
+    <div class="year-block">
+      <div class="year-top">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="year-label">${a.ano}</span>
+          <span class="year-decl">${a.decl}</span>
+        </div>
+        <span class="year-selic">Selic: <b>${a.selic.toFixed(1)}%</b></span>
+      </div>
+      <div class="year-fields">
+        <div class="field">
+          <label>Gasto escolar</label>
+          <div class="ibox">
+            <span class="pfx">R$</span>
+            <input type="text" inputmode="decimal" value="${fmtInput(ST[a.ano].gasto)}" id="g-${a.ano}" onfocus="this.select()" oninput="hG(${a.ano},this)">
+          </div>
+        </div>
+        <div class="field">
+          <label>Alíquota IRPF</label>
+          <div class="ibox">
+            <select id="a-${a.ano}" onchange="hA(${a.ano},this)">
+              ${ALIQS.map(q => `<option value="${q.v}" ${q.v===.275?'selected':''}>${q.l}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function hG(ano, el) {
+  const raw = el.value.replace(/[^\d]/g, '');
+  const num = parseFloat(raw) / 100 || 0;
+  ST[ano].gasto = num;
+  const pos = el.selectionStart;
+  const oldLen = el.value.length;
+  el.value = fmtInput(num);
+  const diff = el.value.length - oldLen;
+  el.setSelectionRange(pos + diff, pos + diff);
+  recalc();
+}
+
+function hA(ano, el) {
+  ST[ano].aliq = parseFloat(el.value);
+  recalc();
+}
+
+// ── Recalc ──
+let lastTotal = 0;
+
+function recalc() {
+  let totIR = 0, totSel = 0, totAll = 0;
+  const rows = [];
+
+  ANOS.forEach(a => {
+    const s = ST[a.ano];
+    if (s.gasto <= TETO) {
+      rows.push({ ano: a.ano, g: s.gasto, exc: 0, aliq: s.aliq, ir: 0, spct: a.selic, sval: 0, tot: 0, below: true });
+      return;
+    }
+    const exc = s.gasto - TETO;
+    const ir = exc * s.aliq;
+    const sv = ir * (a.selic / 100);
+    const tot = ir + sv;
+    totIR += ir; totSel += sv; totAll += tot;
+    rows.push({ ano: a.ano, g: s.gasto, exc, aliq: s.aliq, ir, spct: a.selic, sval: sv, tot, below: false });
+  });
+
+  lastTotal = totAll;
+
+  // Hero
+  const sp = splitVal(totAll);
+  document.getElementById('h-total').innerHTML = sp.int + '<span class="cents">' + sp.dec + '</span>';
+  const irPct = totAll > 0 ? (totIR / totAll * 100) : 0;
+  document.getElementById('h-bar').style.width = Math.min(100, irPct + 10) + '%';
+  document.getElementById('h-ir-lbl').textContent = 'IR pago a mais: ' + fmtShort(totIR);
+  document.getElementById('h-sel-lbl').textContent = 'Correção Selic: ' + fmtShort(totSel);
+
+  // Metrics
+  document.getElementById('m-ir').textContent = fmt(totIR);
+  document.getElementById('m-sel').textContent = fmt(totSel);
+
+  // Desktop table
+  let html = rows.map(r => {
+    if (r.below) return `<tr><td>${r.ano}</td><td class="muted">${fmt(r.g)}</td><td class="muted">≤ teto</td><td class="muted">${(r.aliq*100).toFixed(1)}%</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td></tr>`;
+    return `<tr><td>${r.ano}</td><td>${fmt(r.g)}</td><td>${fmt(r.exc)}</td><td>${(r.aliq*100).toFixed(1)}%</td><td>${fmt(r.ir)}</td><td>${r.spct.toFixed(1)}%</td><td class="accent">${fmt(r.tot)}</td></tr>`;
+  }).join('');
+  html += `<tr class="total-row"><td colspan="4">Total</td><td>${fmt(totIR)}</td><td>${fmt(totSel)}</td><td class="accent">${fmt(totAll)}</td></tr>`;
+  document.getElementById('tb-desk').innerHTML = html;
+
+  // Mobile cards
+  let mc = rows.filter(r => !r.below).map(r => `
+    <div class="mcard-item">
+      <div class="mci-head"><span class="mci-year">${r.ano}</span><span class="mci-total">${fmt(r.tot)}</span></div>
+      <div class="mci-grid">
+        <div class="mci-cell"><div class="mci-lbl">Gasto</div><div class="mci-val">${fmt(r.g)}</div></div>
+        <div class="mci-cell"><div class="mci-lbl">Excedente</div><div class="mci-val">${fmt(r.exc)}</div></div>
+        <div class="mci-cell"><div class="mci-lbl">IR a mais</div><div class="mci-val" style="color:var(--danger)">${fmt(r.ir)}</div></div>
+        <div class="mci-cell"><div class="mci-lbl">Alíquota</div><div class="mci-val">${(r.aliq*100).toFixed(1)}%</div></div>
+        <div class="mci-cell"><div class="mci-lbl">Selic</div><div class="mci-val">${r.spct.toFixed(1)}%</div></div>
+        <div class="mci-cell"><div class="mci-lbl">Correção</div><div class="mci-val">${fmt(r.sval)}</div></div>
+      </div>
+    </div>
+  `).join('');
+  mc += rows.filter(r => r.below).map(r => `<div class="mcard-item" style="opacity:.45"><div class="mci-head"><span class="mci-year">${r.ano}</span><span style="font-size:12px;color:#A89880">≤ teto (${fmt(r.g)})</span></div></div>`).join('');
+  document.getElementById('mc-mob').innerHTML = mc;
+
+  recalcCB();
+
+  // ── Annual recurring gain (based on most recent year) ──
+  const latest = ST[2024];
+  const excAnual = Math.max(0, latest.gasto - TETO);
+  const ganhoAnual = excAnual * latest.aliq;
+  document.getElementById('anual-val').textContent = fmt(ganhoAnual);
+  if (excAnual > 0) {
+    document.getElementById('anual-desc').innerHTML =
+      'Com gasto escolar de <strong>' + fmt(latest.gasto) + '</strong> (ano-base 2024), ' +
+      'o excedente sobre o teto é <strong>' + fmt(excAnual) + '</strong>. ' +
+      'Na alíquota de <strong>' + (latest.aliq*100).toFixed(1) + '%</strong>, você economiza esse valor <strong>todos os anos</strong> enquanto seu filho estiver na escola.';
+  } else {
+    document.getElementById('anual-desc').textContent = 'Gasto escolar atual abaixo do teto de R$ 3.561,50 — sem excedente para deduzir.';
+  }
+}
+
+// ── Cost-benefit ──
+function handleCB(el, key) {
+  const raw = el.value.replace(/[^\d]/g, '');
+  const num = parseFloat(raw) / 100 || 0;
+  CB[key] = num;
+  const pos = el.selectionStart;
+  const oldLen = el.value.length;
+  el.value = fmtInput(num);
+  const diff = el.value.length - oldLen;
+  el.setSelectionRange(pos + diff, pos + diff);
+  recalcCB();
+}
+
+function recalcCB() {
+  const bruto = lastTotal;
+  const exitoVal = bruto * (CB.exito / 100);
+  const custoTotal = CB.hon + CB.cust + exitoVal;
+  const net = bruto - custoTotal;
+
+  document.getElementById('cb-bruto').textContent = fmt(bruto);
+  document.getElementById('cb-custo').textContent = fmt(custoTotal);
+  document.getElementById('cb-net').textContent = fmt(net);
+
+  const heroEl = document.getElementById('cb-hero-net');
+  if (net >= 0) {
+    heroEl.style.background = 'var(--success-bg)';
+    heroEl.style.borderColor = 'rgba(74,124,89,.15)';
+    document.getElementById('cb-net').style.color = 'var(--success)';
+    document.getElementById('cb-net-sub').textContent = 'após descontar todos os custos';
+  } else {
+    heroEl.style.background = 'var(--danger-bg)';
+    heroEl.style.borderColor = 'rgba(163,68,61,.12)';
+    document.getElementById('cb-net').style.color = 'var(--danger)';
+    document.getElementById('cb-net-sub').textContent = 'custos excedem o benefício';
+  }
+
+  document.getElementById('cbd-bruto').textContent = fmt(bruto);
+  document.getElementById('cbd-hon').textContent = '− ' + fmt(CB.hon);
+  document.getElementById('cbd-cust').textContent = '− ' + fmt(CB.cust);
+  document.getElementById('cbd-exito').textContent = '− ' + fmt(exitoVal) + ' (' + CB.exito.toFixed(0) + '%)';
+  document.getElementById('cbd-net').textContent = fmt(net);
+
+  const barPct = bruto > 0 ? Math.max(0, net / bruto * 100) : 0;
+  document.getElementById('cb-bar').style.width = barPct + '%';
+}
+
+// ── Tabs ──
+function go(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('p-' + id).classList.add('active');
+}
+
+// ── Init ──
+build();
+recalc();
+</script>
+</body>
+</html>
